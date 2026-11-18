@@ -1,0 +1,113 @@
+{
+  "name": "续作",
+  "colorName": "晨曦杏",
+  "color": "#E6AA7C",
+  "symbol": "文件夹与继续播放符号",
+  "selection": "crypto.randomInt，一次选色，后续固定",
+  "alphaVerified": [
+    {
+      "size": 16,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "channels": 4
+    },
+    {
+      "size": 20,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "channels": 4
+    },
+    {
+      "size": 24,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "channels": 4
+    },
+    {
+      "size": 32,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "channels": 4
+    },
+    {
+      "size": 40,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "channels": 4
+    },
+    {
+      "size": 48,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "channels": 4
+    },
+    {
+      "size": 64,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "channels": 4
+    },
+    {
+      "size": 96,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "channels": 4
+    },
+    {
+      "size": 128,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "channels": 4
+    },
+    {
+      "size": 256,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "channels": 4
+    }
+  ],
+  "revision": "20261118-glass",
+  "master": "icon-master.png",
+  "smallSource": "icon-small.svg",
+  "generator": "image_gen for glass master; native SVG for optically adapted small sizes"
+}
