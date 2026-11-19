@@ -14,6 +14,13 @@ class Library {
   get(name, fallback) {const r=this.db.prepare('SELECT value FROM settings WHERE key=?').get(name); return r?JSON.parse(r.value):fallback;}
   set(name,value) {this.db.prepare('INSERT INTO settings VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(name,JSON.stringify(value)); return value;}
   all() {return this.db.prepare('SELECT data,meta FROM projects').all().map(projectFromRow);}
+  present() {return this.all().filter(project=>project.exists!==false);}
+  markMissing(projects) {
+    const setMissing=this.db.prepare("UPDATE projects SET data=json_set(data, '$.exists', json('false')) WHERE id=?");
+    this.db.exec('BEGIN');
+    try{for(const project of projects)setMissing.run(project.id);this.db.exec('COMMIT');}
+    catch(error){this.db.exec('ROLLBACK');throw error;}
+  }
   one(id) {const r=this.db.prepare('SELECT data,meta FROM projects WHERE id=?').get(id);if(!r)throw new Error('找不到这个项目，请重新扫描。');return projectFromRow(r);}
   upsert(projects) {
     const stmt=this.db.prepare('INSERT INTO projects(id,pathkey,data) VALUES (?,?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data');

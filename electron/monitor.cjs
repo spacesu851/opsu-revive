@@ -5,9 +5,24 @@ const {scan,inspect,skipped}=require('./scanner.cjs');
 const {key}=require('./library.cjs');
 const within=(root,file)=>key(file)===key(root)||key(file).startsWith(key(root)+'/');
 
-function createProjectMonitor({getRoots,getProjects,getMaxDepth=()=>6,onProjects,onError=()=>{},debounceMs=900,retryMs=30000}){
+async function directoryMissing(dir){
+  try{return !(await fsp.stat(dir)).isDirectory();}
+  catch(error){return error.code==='ENOENT'||error.code==='ENOTDIR';}
+}
+
+async function findMissingProjects(projects){
+  const indexed=projects.filter(p=>p.exists!==false),missing=[];
+  for(let i=0;i<indexed.length;i+=32){
+    const batch=indexed.slice(i,i+32);
+    const gone=await Promise.all(batch.map(p=>directoryMissing(p.path)));
+    missing.push(...batch.filter((_,j)=>gone[j]));
+  }
+  return missing;
+}
+
+function createProjectMonitor({getRoots,getProjects,getMaxDepth=()=>6,onProjects,onMissing,onError=()=>{},debounceMs=900,retryMs=30000}){
   const watchers=new Map(),pending=new Map(),full=new Map(),controller=new AbortController();
-  let timer=null,closed=false,busy=false;
+  let timer=null,closed=false,busy=false,checkAll=false;
   const roots=()=>[...new Map(getRoots().filter(r=>r.enabled!==false&&typeof r.path==='string').map(r=>[key(r.path),path.resolve(r.path)])).values()];
   const maxDepth=()=>Math.min(10,Math.max(1,Number(getMaxDepth())||6));
   async function realInside(root,dir){try{return within(await fsp.realpath(root),await fsp.realpath(dir));}catch{return false;}}
@@ -31,8 +46,7 @@ function createProjectMonitor({getRoots,getProjects,getMaxDepth=()=>6,onProjects
   async function processChange({root,file}){
     if(closed)return;
     const projects=getProjects();
-    const missing=projects.filter(p=>p.exists!==false&&within(file,p.path)&&!fs.existsSync(p.path));
-    if(missing.length)await onProjects(missing.map(p=>({...p,exists:false})));
+    await reportMissing(projects.filter(p=>within(file,p.path)||within(p.path,file)));
     const owner=projects.filter(p=>within(p.path,file)&&within(root,p.path)).sort((a,b)=>a.path.length-b.path.length)[0];
     if(owner){if(await realInside(root,owner.path)){const result=await scan([owner.path],{maxDepth:0,signal:controller.signal});if(!closed&&result.projects.length)await onProjects(result.projects);}return;}
     let info;try{info=await fsp.stat(file);}catch{}
@@ -48,11 +62,16 @@ function createProjectMonitor({getRoots,getProjects,getMaxDepth=()=>6,onProjects
     }
     if(key(directory)!==key(root)&&fs.existsSync(directory))await collect(root,directory);
   }
+  async function reportMissing(projects){
+    const missing=await findMissingProjects(projects);
+    if(!closed&&missing.length)await onMissing(missing);
+  }
   async function flush(){
     if(closed||busy){if(!closed)schedule();return;}
     busy=true;const active=new Set(roots().map(key)),rescan=[...full.values()].filter(r=>active.has(key(r))),changes=[...pending.values()].filter(c=>active.has(key(c.root)));
-    full.clear();pending.clear();
+    const verifyAll=checkAll;checkAll=false;full.clear();pending.clear();
     try{
+      if(verifyAll||rescan.length)await reportMissing(getProjects().filter(p=>verifyAll||rescan.some(root=>within(root,p.path))));
       for(const root of rescan){if(closed)break;await collect(root,root);}
       const visited=new Set();
       for(const change of changes){
@@ -78,7 +97,7 @@ function createProjectMonitor({getRoots,getProjects,getMaxDepth=()=>6,onProjects
     }
     if(full.size)schedule();
   }
-  const retry=setInterval(()=>refresh(),retryMs);retry.unref?.();
+  const retry=setInterval(()=>{checkAll=true;refresh();schedule();},retryMs);retry.unref?.();
   return {refresh,paths:()=>roots().filter(root=>watchers.has(key(root))),close(){closed=true;controller.abort();clearTimeout(timer);clearInterval(retry);for(const watcher of watchers.values())watcher.close();watchers.clear();pending.clear();full.clear();}};
 }
-module.exports={createProjectMonitor};
+module.exports={createProjectMonitor,directoryMissing,findMissingProjects};

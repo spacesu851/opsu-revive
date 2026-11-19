@@ -1,7 +1,7 @@
 {
   "name": "opsu-revive",
-  "productName": "续作",
-  "version": "0.2.40",
+  "productName": "伏笔",
+  "version": "0.2.44",
   "description": "找回灵感，接着创造。Windows 本地项目工作台。",
   "author": "Spacesu",
   "private": true,
@@ -29,7 +29,7 @@
   },
   "build": {
     "appId": "cc.opsu.revive",
-    "productName": "续作",
+    "productName": "伏笔",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -46,6 +46,7 @@
         "nsis"
       ],
       "icon": "build/icon.ico",
+      "executableName": "续作",
       "artifactName": "OPSU-Revive-x64-Setup.${ext}"
     },
     "nsis": {
@@ -53,7 +54,7 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": false,
-      "shortcutName": "续作",
+      "shortcutName": "伏笔",
       "deleteAppDataOnUninstall": false
     },
     "npmRebuild": false

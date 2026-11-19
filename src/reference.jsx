@@ -36,9 +36,14 @@ export function FolderArt({p,large=false,mini=false}){
     <div className="folder-back" style={{'--exposed-back': `url(#exposed-back-${uid})`}}/>
     <div className="folder-sheet sheet-one">
       <div className="folder-sheet-paper">
-        {!mini && (p.thumbnail ? <img src={p.thumbnail} alt="项目封面" draggable="false"/> : <Icon strokeWidth={1.6}/>)}
+        {!mini && !p.thumbnail && <Icon strokeWidth={1.6}/>}
       </div>
     </div>
+    {!mini && p.thumbnail && <div className="folder-cover-print" style={{maskImage: `url(#cover-ink-${uid})`}}>
+      <div className="folder-sheet sheet-one">
+        <div className="folder-sheet-paper"><img src={p.thumbnail} alt="项目封面" draggable={false}/></div>
+      </div>
+    </div>}
     <div aria-hidden="true" className="folder-frost frost-near" style={{maskImage: `url(#frost-near-${uid})`}}/>
     <div aria-hidden="true" className="folder-frost frost-deep" style={{maskImage: `url(#frost-deep-${uid})`}}/>
     <svg className="folder-pocket-shadow" viewBox="0 0 206 116" preserveAspectRatio="none" aria-hidden="true">
@@ -60,6 +65,12 @@ export function FolderArt({p,large=false,mini=false}){
           <clipPath id={`pocket-clip-${uid}`} clipPathUnits="objectBoundingBox">
             <path id={`pocket-shape-${uid}`} className="folder-pocket-clip" transform="scale(.004854368932 .008620689655)"/>
           </clipPath>
+          {!mini && p.thumbnail && <mask id={`cover-ink-${uid}`} maskContentUnits="objectBoundingBox" x="0" y="0" width="1" height="1" style={{maskType: 'luminance'}}>
+            <rect width="1" height="1" fill="white"/>
+            <g transform={`translate(0 ${35 / 156}) scale(1 ${116 / 156})`}>
+              <use href={`#pocket-shape-${uid}`} fill="#333"/>
+            </g>
+          </mask>}
           {/* Map the pocket viewport (0,35,206,116) into the rear plate (13.5,23,178,124). */}
           <mask id={`exposed-back-${uid}`} maskContentUnits="objectBoundingBox" x="0" y="0" width="1" height="1" style={{maskType: 'luminance'}}>
             <rect width="1" height="1" fill="white"/>
@@ -156,7 +167,7 @@ export function ProjectDetail({p,details:d,loading,error,onClose,onContinue,onCo
     onPointerDown={e=>{blankPress.current=isBlank(e.target)?e.target:null;}}
     onClick={e=>{if(e.target===blankPress.current&&isBlank(e.target))onClose();blankPress.current=null;}}>
     <div className={`detail-ambient color-${p.color||'slate'}`}/><button className="detail-close" aria-label="关闭项目详情" onClick={onClose}><X size={19}/></button>
-    <div className="detail-stage"><div className="detail-folder-wrap"><FolderArt p={{...p,running:previewing}} large/></div><div className="inspector-actions"><div className="continue-split"><Btn variant="primary" icon={p.sessions?.length?Sparkles:Play} disabled={p.exists===false} onClick={onContinue}>继续开发</Btn><details className="continue-options"><summary aria-label="继续开发选项"><ChevronDown size={13}/></summary><div><button onClick={onCopyContext}><Copy size={13}/>只复制续作上下文</button><button onClick={onEditor}><Code2 size={13}/>在编辑器打开</button></div></details></div><Btn icon={busy?LoaderCircle:previewing?Square:Play} disabled={busy||loading||p.exists===false||(d?.plan.kind==='none'&&p.type!=='桌面应用')} onClick={onPreview}>{busy?'启动中…':previewing?'停止预览':'运行'}</Btn><IconBtn icon={FolderOpen} label="在资源管理器打开" onClick={onFolder}/><IconBtn icon={Star} label={p.favorite?'取消收藏':'收藏项目'} active={p.favorite} onClick={onFavorite}/></div><p className="continue-hint">复制续作上下文，并打开你的编辑器</p>{d?.plan.kind==='dev'&&<small className="dev-command">预览运行：{d.plan.command}</small>}</div>
+    <div className="detail-stage"><div className="detail-folder-wrap"><FolderArt p={{...p,running:previewing}} large/></div><div className="inspector-actions"><div className="continue-split"><Btn variant="primary" icon={p.sessions?.length?Sparkles:Play} disabled={p.exists===false} onClick={onContinue}>继续开发</Btn><details className="continue-options"><summary aria-label="继续开发选项"><ChevronDown size={13}/></summary><div><button onClick={onCopyContext}><Copy size={13}/>只复制项目上下文</button><button onClick={onEditor}><Code2 size={13}/>在编辑器打开</button></div></details></div><Btn icon={busy?LoaderCircle:previewing?Square:Play} disabled={busy||loading||p.exists===false||(d?.plan.kind==='none'&&p.type!=='桌面应用')} onClick={onPreview}>{busy?'启动中…':previewing?'停止预览':'运行'}</Btn><IconBtn icon={FolderOpen} label="在资源管理器打开" onClick={onFolder}/><IconBtn icon={Star} label={p.favorite?'取消收藏':'收藏项目'} active={p.favorite} onClick={onFavorite}/></div><p className="continue-hint">复制项目上下文，并打开你的编辑器</p>{d?.plan.kind==='dev'&&<small className="dev-command">预览运行：{d.plan.command}</small>}</div>
     <Scroll className="detail-content inspector-scroll" resetKey={p.id}>
       <div className="detail-preview"><div className="preview-controls"><span>{p.thumbnail?'项目预览':'项目封面'}</span><div><IconBtn icon={ClipboardPaste} label="粘贴剪贴板图片（Ctrl+V）" onClick={onPasteCover}/><IconBtn icon={ImagePlus} label="设置项目封面" onClick={onCover}/><IconBtn icon={ArrowUpRight} label="打开项目预览" disabled={loading||busy||(d?.plan.kind==='none'&&p.type!=='桌面应用')} onClick={onPreview}/></div></div>{p.thumbnail?<img className="detail-preview-image" src={p.thumbnail} alt={`${p.name} 的项目预览`}/>:<div className="preview-placeholder"><Monitor size={38} strokeWidth={1.1}/><strong>{p.name}</strong><span>{p.description||p.stack?.join(' · ')||p.type}</span><button onClick={onPreview} disabled={loading||busy||(d?.plan.kind==='none'&&p.type!=='桌面应用')}><Play size={12}/>打开预览</button><small>预览后自动生成封面，也可自行添加图片</small></div>}</div>
       <SessionActivity p={p} context={d?.context}/>
